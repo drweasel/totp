@@ -1,3 +1,4 @@
+#include "otp.h"
 extern "C"
 {
 #include <sodium.h>
@@ -116,26 +117,33 @@ inline constexpr uint64_t byteswap(uint64_t ull)
 	       ((ull >> 40) & 0x000000000000FF00) | (ull << 56);
 }
 
-} // anonymous namespace
-
-/**
- * Generation of time-based one-time passwords (TOTP) according to RFC6238.
- * This code is based on HMACSHA512 and offers OTPs with 6 to 9 digits.
- *
- * @param b32_secret a BASE32-encoded secret
- * @param period the interval in which a key stays valid
- * @param digits the number of digits to generate
- * @param t0 the time shift in seconds
- * @return a string containing the TOTP
- */
-std::string generateHMACSHA512_TOTP(const char * b32_secret,
-    unsigned int period,
-    unsigned int digits,
-    int t0)
+uint64_t generate_TOTP_UTC_counter_value(unsigned int period, int t0)
 {
 	if (period == 0) throw std::invalid_argument("period must be non-zero");
+
+	// get a UTC timestamp (std::system_clock::now() returns UTC!)
+	auto ts_utc = std::chrono::duration_cast<std::chrono::seconds>(
+	    std::chrono::system_clock::now().time_since_epoch())
+	                  .count();
+	// shift timestamp by given offset and divide it by the period.
+	// Originally, t0 is subtracted - this makes slightly more sense.
+	if (int64_t(ts_utc) + t0 < 0)
+	{
+		throw std::invalid_argument(
+		    "invalid shift value - would result in a negative timestamp");
+	}
+	return (ts_utc + t0) / period;
+}
+
+} // anonymous namespace
+
+std::string generateHMACSHA512_HOTP(const char * b32_secret,
+    unsigned int digits,
+    uint64_t counter)
+{
 	if (digits > 9)
 		throw std::invalid_argument("digits must not exceed the value 9");
+
 	if (sodium_init() < 0) throw std::runtime_error("sodium_init() failed");
 
 	// decode the secret
@@ -164,25 +172,14 @@ std::string generateHMACSHA512_TOTP(const char * b32_secret,
 	        ? key_len
 	        : crypto_auth_hmacsha512_KEYBYTES);
 
-	// get a UTC timestamp (std::system_clock::now() returns UTC!)
-	auto ts_utc = std::chrono::duration_cast<std::chrono::seconds>(
-	    std::chrono::system_clock::now().time_since_epoch())
-	                  .count();
-	// shift timestamp by given offset and divide it by the period.
-	// Originally, t0 is subtracted - this makes slightly more sense.
-	if (int64_t(ts_utc) + t0 < 0)
-	{
-		throw std::invalid_argument(
-		    "invalid shift value - would result in a negative timestamp");
-	}
-	uint64_t ts = (ts_utc + t0) / period;
-
-	// convert the timestamp to big endian (if required)
-	if constexpr (std::endian::native == std::endian::little) ts = byteswap(ts);
+	// convert the counter to big endian (if required)
+	if constexpr (std::endian::native == std::endian::little)
+		counter = byteswap(counter);
 
 	// compute the HMACSHA512
 	unsigned char hmac[crypto_auth_hmacsha512_BYTES] = {};
-	crypto_auth_hmacsha512(hmac, (const unsigned char *)&ts, sizeof(ts), key);
+	crypto_auth_hmacsha512(
+	    hmac, (const unsigned char *)&counter, sizeof(counter), key);
 
 	// pick some digits and return them as OTP
 	uint64_t dbc = dyn_truncate(hmac, crypto_auth_hmacsha512_BYTES);
@@ -191,5 +188,14 @@ std::string generateHMACSHA512_TOTP(const char * b32_secret,
 	std::stringstream sstr;
 	sstr << std::setw(digits) << std::setfill('0') << std::to_string(totp);
 	return sstr.str();
+}
+
+std::string generateHMACSHA512_TOTP(const char * b32_secret,
+    unsigned int digits,
+    unsigned int period,
+    int t0)
+{
+	uint64_t counter = generate_TOTP_UTC_counter_value(period, t0);
+	return generateHMACSHA512_HOTP(b32_secret, digits, counter);
 }
 

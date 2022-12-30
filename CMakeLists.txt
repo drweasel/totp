@@ -29,7 +29,7 @@ add_custom_target(__prebuild__ ALL
   )
 
 add_executable(totp)
-target_sources(totp PRIVATE totp.cpp main.cpp)
+target_sources(totp PRIVATE otp.cpp otp.h main.cpp)
 target_link_libraries(totp PUBLIC -lsodium)
 
 # vim:fenc=utf-8 et sw=2:
