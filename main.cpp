@@ -18,7 +18,7 @@ int main()
 	try
 	{
 		uint32_t totp =
-		    generate_TOTP(b32_secret, digits, period, t0, HMAC::SHA256);
+		    generate_TOTP(b32_secret, digits, period, t0, HMAC::SHA512);
 
 		std::stringstream sstr;
 		sstr << std::setw(digits) << std::setfill('0') << std::to_string(totp);

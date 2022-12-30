@@ -174,10 +174,8 @@ uint32_t generate_HOTP(const char * b32_secret,
 		          << " bytes" << std::endl;
 	}
 	auto key = std::make_unique<unsigned char[]>(key_bytes);
-	std::memcpy(key.get(), key_plain.get(),
-	    key_len < key_bytes
-	        ? key_len
-	        : key_bytes);
+	std::memcpy(
+	    key.get(), key_plain.get(), key_len < key_bytes ? key_len : key_bytes);
 
 	// convert the counter to big endian (if required)
 	if constexpr (std::endian::native == std::endian::little)
@@ -188,12 +186,12 @@ uint32_t generate_HOTP(const char * b32_secret,
 	switch (hash_algo)
 	{
 	case HMAC::SHA256:
-		crypto_auth_hmacsha256(
-		    hmac.get(), (const unsigned char *)&counter, sizeof(counter), key.get());
+		crypto_auth_hmacsha256(hmac.get(), (const unsigned char *)&counter,
+		    sizeof(counter), key.get());
 		break;
 	case HMAC::SHA512:
-		crypto_auth_hmacsha512(
-		    hmac.get(), (const unsigned char *)&counter, sizeof(counter), key.get());
+		crypto_auth_hmacsha512(hmac.get(), (const unsigned char *)&counter,
+		    sizeof(counter), key.get());
 		break;
 	}
 
@@ -206,9 +204,13 @@ uint32_t generate_TOTP(const char * b32_secret,
     unsigned int digits,
     unsigned int period,
     int t0,
-    HMAC hash_algo)
+    HMAC hash_algo,
+    int64_t seconds_since_epoch)
 {
-	uint64_t counter = generate_TOTP_UTC_counter_value(period, t0);
+	uint64_t counter = seconds_since_epoch >= 0
+	                       ? static_cast<uint64_t>(seconds_since_epoch)
+	                       : generate_TOTP_UTC_counter_value(period, t0);
+
 	return generate_HOTP(b32_secret, digits, counter, hash_algo);
 }
 
