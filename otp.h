@@ -10,7 +10,7 @@
  * @param counter a counter value, used only once
  * @return a string containing the OTP
  */
-std::string generateHMACSHA512_HOTP(const char * b32_secret,
+uint32_t generateHMACSHA512_HOTP(const char * b32_secret,
     unsigned int digits,
     uint64_t counter);
 
@@ -24,7 +24,7 @@ std::string generateHMACSHA512_HOTP(const char * b32_secret,
  * @param t0 the time shift in seconds
  * @return a string containing the TOTP
  */
-std::string generateHMACSHA512_TOTP(const char * b32_secret,
+uint32_t generateHMACSHA512_TOTP(const char * b32_secret,
     unsigned int digits,
     unsigned int period,
     int t0);

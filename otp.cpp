@@ -9,12 +9,9 @@ extern "C"
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <iomanip>
 #include <iostream>
 #include <memory>
-#include <sstream>
 #include <stdexcept>
-#include <string>
 
 namespace
 {
@@ -86,16 +83,11 @@ ssize_t base32_decode(const char * b32, void * decoded)
 uint32_t dyn_truncate(const uint8_t * in, int in_len)
 {
 	int offset = in[in_len - 1] & 0xf;
+	uint32_t hdigits = in[offset] & 0x7f;
 
-#if 0
-	uint32_t dbc = (in[offset] & 0x7f) << 24 | (in[offset + 1] & 0xff) << 16 |
-	               (in[offset + 2] & 0xff) << 8 | (in[offset + 3] & 0xff);
-#else
-	uint32_t dbc = in[offset] & 0x7f;
 	for (int k = 1; k < 4; ++k)
-		dbc = (dbc << 8) | (in[(offset + k) % in_len] & 0xff);
-#endif
-	return dbc;
+		hdigits = (hdigits << 8) | (in[(offset + k) % in_len] & 0xff);
+	return hdigits;
 }
 
 /** Computes b^e */
@@ -137,7 +129,7 @@ uint64_t generate_TOTP_UTC_counter_value(unsigned int period, int t0)
 
 } // anonymous namespace
 
-std::string generateHMACSHA512_HOTP(const char * b32_secret,
+uint32_t generateHMACSHA512_HOTP(const char * b32_secret,
     unsigned int digits,
     uint64_t counter)
 {
@@ -182,15 +174,11 @@ std::string generateHMACSHA512_HOTP(const char * b32_secret,
 	    hmac, (const unsigned char *)&counter, sizeof(counter), key);
 
 	// pick some digits and return them as OTP
-	uint64_t dbc = dyn_truncate(hmac, crypto_auth_hmacsha512_BYTES);
-	uint64_t totp = dbc % ipow(10, digits);
-
-	std::stringstream sstr;
-	sstr << std::setw(digits) << std::setfill('0') << std::to_string(totp);
-	return sstr.str();
+	uint64_t otp_digits = dyn_truncate(hmac, crypto_auth_hmacsha512_BYTES);
+	return static_cast<uint32_t>(otp_digits % ipow(10, digits));
 }
 
-std::string generateHMACSHA512_TOTP(const char * b32_secret,
+uint32_t generateHMACSHA512_TOTP(const char * b32_secret,
     unsigned int digits,
     unsigned int period,
     int t0)
