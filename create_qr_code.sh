@@ -2,11 +2,22 @@
 
 # see https://github.com/google/google-authenticator/wiki/Key-Uri-Format
 
+# if the secret is not given on command line it will be read here:
+if test -z "$1"; then
+  echo -n "enter secret password (press enter for a default one): "
+  read -s SECRET
+  if test -z "$SECRET"; then
+    SECRET="Die wahnsinnige Kuh lief unablaessig um den Stall"
+  fi
+else
+  SECRET="$1"
+fi
+
+# type is always totp - hotp not supported by this script
 TYPE=totp
-SECRET="Die wahnsinnige Kuh lief unablaessig um den Stall"
 
 # number of digits to generate; possible values: 6, 7, 8, 9
-DIGITS=6
+DIGITS=8
 # time period
 PERIOD=30
 
@@ -61,6 +72,6 @@ URL="otpauth://${TYPE}/${LABEL}?${PARAMETERS}"
 # echo the URL to stderr
 >&2 echo $URL
 
-# emit a SVG file to stdout
-echo -n $URL | qrencode -t UTF8 -o -
+# emit a UTF8-encoded QR code to stdout
+echo -n $URL | qrencode -l M -t UTF8 -o -
 
