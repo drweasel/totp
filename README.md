@@ -1,4 +1,4 @@
-# TOTP
+# TOTP - Time-Based One-Time Passwords According to RFC 6238
 Basic C++ TOTP implementation based on libsodium (<https://doc.libsodium.org/>).
 
 The OTPs generated with this application are compatible with FreeOTP
