@@ -129,10 +129,25 @@ uint64_t generate_TOTP_UTC_counter_value(unsigned int period, int t0)
 
 } // anonymous namespace
 
-uint32_t generateHMACSHA512_HOTP(const char * b32_secret,
+uint32_t generate_HOTP(const char * b32_secret,
     unsigned int digits,
-    uint64_t counter)
+    uint64_t counter,
+    HMAC hash_algo)
 {
+	std::size_t hmac_bytes, key_bytes;
+
+	switch (hash_algo)
+	{
+	case HMAC::SHA256:
+		hmac_bytes = crypto_auth_hmacsha256_BYTES;
+		key_bytes = crypto_auth_hmacsha256_KEYBYTES;
+		break;
+	case HMAC::SHA512:
+		hmac_bytes = crypto_auth_hmacsha512_BYTES;
+		key_bytes = crypto_auth_hmacsha512_KEYBYTES;
+		break;
+	};
+
 	if (digits > 9)
 		throw std::invalid_argument("digits must not exceed the value 9");
 
@@ -145,45 +160,55 @@ uint32_t generateHMACSHA512_HOTP(const char * b32_secret,
 	if (key_len < 0)
 		throw std::invalid_argument("BASE32-decoding of secret failed");
 
-	// prepare a key for the HMACSHA512 algorithm
-	unsigned char key[crypto_auth_hmacsha512_KEYBYTES] = {};
-	if (key_len < ssize_t(crypto_auth_hmacsha512_KEYBYTES))
+	// prepare a key for the HMAC algorithm
+	if (key_len < ssize_t(key_bytes))
 	{
 		std::cerr << "W: your secret key is too short (" << key_len
-		          << " bytes) - it should have exactly "
-		          << crypto_auth_hmacsha512_KEYBYTES << " bytes" << std::endl;
+		          << " bytes) - it should have exactly " << key_bytes
+		          << " bytes" << std::endl;
 	}
-	if (key_len > ssize_t(crypto_auth_hmacsha512_KEYBYTES))
+	if (key_len > ssize_t(key_bytes))
 	{
 		std::cerr << "W: your secret key is too long (" << key_len
-		          << " bytes) - it should have exactly "
-		          << crypto_auth_hmacsha512_KEYBYTES << " bytes" << std::endl;
+		          << " bytes) - it should have exactly " << key_bytes
+		          << " bytes" << std::endl;
 	}
-	std::memcpy(key, key_plain.get(),
-	    key_len < crypto_auth_hmacsha512_KEYBYTES
+	auto key = std::make_unique<unsigned char[]>(key_bytes);
+	std::memcpy(key.get(), key_plain.get(),
+	    key_len < key_bytes
 	        ? key_len
-	        : crypto_auth_hmacsha512_KEYBYTES);
+	        : key_bytes);
 
 	// convert the counter to big endian (if required)
 	if constexpr (std::endian::native == std::endian::little)
 		counter = byteswap(counter);
 
-	// compute the HMACSHA512
-	unsigned char hmac[crypto_auth_hmacsha512_BYTES] = {};
-	crypto_auth_hmacsha512(
-	    hmac, (const unsigned char *)&counter, sizeof(counter), key);
+	// compute the HMAC
+	auto hmac = std::make_unique<unsigned char[]>(hmac_bytes);
+	switch (hash_algo)
+	{
+	case HMAC::SHA256:
+		crypto_auth_hmacsha256(
+		    hmac.get(), (const unsigned char *)&counter, sizeof(counter), key.get());
+		break;
+	case HMAC::SHA512:
+		crypto_auth_hmacsha512(
+		    hmac.get(), (const unsigned char *)&counter, sizeof(counter), key.get());
+		break;
+	}
 
 	// pick some digits and return them as OTP
-	uint64_t otp_digits = dyn_truncate(hmac, crypto_auth_hmacsha512_BYTES);
+	uint64_t otp_digits = dyn_truncate(hmac.get(), hmac_bytes);
 	return static_cast<uint32_t>(otp_digits % ipow(10, digits));
 }
 
-uint32_t generateHMACSHA512_TOTP(const char * b32_secret,
+uint32_t generate_TOTP(const char * b32_secret,
     unsigned int digits,
     unsigned int period,
-    int t0)
+    int t0,
+    HMAC hash_algo)
 {
 	uint64_t counter = generate_TOTP_UTC_counter_value(period, t0);
-	return generateHMACSHA512_HOTP(b32_secret, digits, counter);
+	return generate_HOTP(b32_secret, digits, counter, hash_algo);
 }
 

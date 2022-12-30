@@ -1,11 +1,10 @@
 #include "otp.h"
 
+#include <iomanip>
 #include <iostream>
-#include <regex>
+#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <sstream>
-#include <iomanip>
 
 int main()
 {
@@ -18,7 +17,8 @@ int main()
 
 	try
 	{
-		uint32_t totp = generateHMACSHA512_TOTP(b32_secret, digits, period, t0);
+		uint32_t totp =
+		    generate_TOTP(b32_secret, digits, period, t0, HMAC::SHA256);
 
 		std::stringstream sstr;
 		sstr << std::setw(digits) << std::setfill('0') << std::to_string(totp);

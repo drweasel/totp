@@ -1,5 +1,12 @@
 #pragma once
+#include <cstdint>
 #include <string>
+
+enum class HMAC
+{
+	SHA256,
+	SHA512
+};
 
 /**
  * Generation of counter-based one-time passwords (HOTP) according to RFC 4226.
@@ -8,11 +15,12 @@
  * @param b32_secret a BASE32-encoded secret
  * @param digits the number of digits to generate
  * @param counter a counter value, used only once
- * @return a string containing the OTP
+ * @return a uint32_t containing the OTP
  */
-uint32_t generateHMACSHA512_HOTP(const char * b32_secret,
+uint32_t generate_HOTP(const char * b32_secret,
     unsigned int digits,
-    uint64_t counter);
+    uint64_t counter,
+    HMAC hash_algo);
 
 /**
  * Generation of time-based one-time passwords (TOTP) according to RFC6238.
@@ -22,10 +30,11 @@ uint32_t generateHMACSHA512_HOTP(const char * b32_secret,
  * @param digits the number of digits to generate
  * @param period the interval in which a key stays valid
  * @param t0 the time shift in seconds
- * @return a string containing the TOTP
+ * @return a uint32_t containing the TOTP
  */
-uint32_t generateHMACSHA512_TOTP(const char * b32_secret,
+uint32_t generate_TOTP(const char * b32_secret,
     unsigned int digits,
     unsigned int period,
-    int t0);
+    int t0,
+    HMAC hash_algo);
 
