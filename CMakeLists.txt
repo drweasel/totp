@@ -28,8 +28,15 @@ add_custom_target(__prebuild__ ALL
   COMMAND ${CMAKE_COMMAND} -E create_symlink "${PROJECT_BINARY_DIR}/compile_commands.json" "${PROJECT_SOURCE_DIR}/compile_commands.json"
   )
 
+add_library(otp)
+target_sources(otp PRIVATE
+  otp.cpp otp.h
+  otpauthuri.cpp otpauthuri.h
+  )
+target_link_libraries(otp PUBLIC -lsodium)
+
 add_executable(totp)
-target_sources(totp PRIVATE otp.cpp otp.h main.cpp)
-target_link_libraries(totp PUBLIC -lsodium)
+target_sources(totp PRIVATE main.cpp)
+target_link_libraries(totp PRIVATE otp)
 
 # vim:fenc=utf-8 et sw=2:
