@@ -7,15 +7,16 @@ usage() {
   >&2 echo
   >&2 echo "Usage:"
   >&2 echo "$PRG
-    -a <SHA256|SHA512>  (default: SHA256)
-    -d <DIGITS>         (default: 6)   
-    -i <ISSUER>         (optional)
-    -p <PERIOD>         (default: 30)
-    -u <ACCOUNT>        (required)
-    <SECRET>            (will be queried if omitted)"
+    -a <SHA256|SHA512> (default: SHA256)
+    -d <DIGITS>        (default: 6)
+    -i <ISSUER>        (optional; queried by FreeOTP if omitted)
+    -l                 (optional; add 'lock=true', e.g. FaceID in FreeOTP/IOS)
+    -p <PERIOD>        (default: 30)
+    -u <ACCOUNT>       (required)
+    <SECRET>           (will be queried if omitted)"
 }
 
-PARGS=$(getopt -a -n ${PRG} -o a:d:i:p:u: -- "$@")
+PARGS=$(getopt -a -n ${PRG} -o a:d:i:lp:u: -- "$@")
 if test "$?" != "0"; then
   usage
   exit 2
@@ -23,9 +24,10 @@ fi
 
 _ALGORITHM=SHA256
 _DIGITS=6
+_ISSUER=
+_LOCK=
 _PERIOD=30
 _ACCOUNT=
-_ISSUER=
 _SECRET=
 
 eval set -- "$PARGS"
@@ -34,9 +36,10 @@ do
   case "$1" in
     -a) _ALGORITHM="$2"; shift 2;;
     -d) _DIGITS="$2"; shift 2;;
+    -i) _ISSUER="$2"; shift 2;;
+    -l) _LOCK=1; shift 1;;
     -p) _PERIOD="$2"; shift 2;;
     -u) _ACCOUNT="$2"; shift 2;;
-    -i) _ISSUER="$2"; shift 2;;
     --) shift; break;;
     *) echo "unexpected option $1"; usage; exit 2;;
   esac
@@ -68,18 +71,18 @@ fi
 # type is always totp - hotp not supported by this script
 TYPE=totp
 
-# number of digits to generate; possible values: 6, 7, 8, 9
-DIGITS="$_DIGITS"
-# time period
-PERIOD="$_PERIOD"
-
 # possible values: SHA1, SHA256, SHA512
 ALGORITHM="$_ALGORITHM"
-
-# an account (mandatory)
-ACCOUNT="$_ACCOUNT"
+# number of digits to generate; possible values: 6, 7, 8, 9
+DIGITS="$_DIGITS"
 # an issuer (optional)
 ISSUER="$_ISSUER"
+# locking
+LOCK="$_LOCK"
+# time period
+PERIOD="$_PERIOD"
+# an account (mandatory)
+ACCOUNT="$_ACCOUNT"
 
 # -----------------------------------------------------------------------------
 
@@ -118,6 +121,9 @@ else
 fi
 
 PARAMETERS="secret=${SECRET}&algorithm=${ALGORITHM}&digits=${DIGITS}&period=${PERIOD}"
+if test -n "$LOCK"; then
+  PARAMETERS="${PARAMETERS}&lock=true"
+fi
 
 URL="otpauth://${TYPE}/${LABEL}?${PARAMETERS}"
 
