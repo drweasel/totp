@@ -23,9 +23,15 @@ int main(int argc, char ** argv)
 	}
 	catch (const std::invalid_argument & ex)
 	{
-		std::cerr << "exception: " << ex.what() << std::endl;
+		std::cerr << "error: " << ex.what() << std::endl;
 		return EXIT_FAILURE;
 	}
+
+    if (otpauth_uri.GetType() != OTPAuthURI::Type::TOTP)
+    {
+        std::cerr << "error: only TOTP is currently supported" << std::endl;
+        return EXIT_FAILURE;
+    }
 
 	unsigned int digits = otpauth_uri.GetDigits();
 	unsigned int period = otpauth_uri.GetPeriod();
