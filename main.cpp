@@ -7,26 +7,34 @@
 #include <stdexcept>
 #include <string>
 
-int main()
+int main(int argc, char ** argv)
 {
-#if 0
-  char uri[] = "otpauth://totp/Smarthome:willi%40winzig.de?secret=MFEWYOLEGRDVQNKWI5NDCOJQKJ3UCYLPMJGEKTTPOI4D2CQ&algorithm=SHA256&digits=6&period=30";
-  auto otpauth_uri = OTPAuthURI::ParseURI(uri);
-  std::cout << "URI:" << otpauth_uri.ToString() << std::endl;
-  return 0;
-#endif
+	if (argc != 2)
+	{
+		std::cerr << "please provide an otpauth URI as command line argument"
+		          << std::endl;
+		return EXIT_FAILURE;
+	}
 
-	char b32_secret[] =
-	    "JF2CA2LTEBXG65BAMEQGQ2LHNBWHSIDTMVRXK4TFEBYGC43TO5SA"; // padding ===
+	OTPAuthURI otpauth_uri;
+	try
+	{
+		otpauth_uri = OTPAuthURI::ParseURI(argv[1]);
+	}
+	catch (const std::invalid_argument & ex)
+	{
+		std::cerr << "exception: " << ex.what() << std::endl;
+		return EXIT_FAILURE;
+	}
 
-	constexpr unsigned int digits = 8u;
-	constexpr unsigned int period = 30u;
+	unsigned int digits = otpauth_uri.GetDigits();
+	unsigned int period = otpauth_uri.GetPeriod();
 	constexpr int t0 = 0;
 
 	try
 	{
-		uint32_t totp =
-		    generate_TOTP(b32_secret, digits, period, t0, HMAC::SHA512);
+		uint32_t totp = generate_TOTP(otpauth_uri.GetBase32Secret().c_str(),
+		    digits, period, t0, otpauth_uri.GetAlgorithm());
 
 		std::stringstream sstr;
 		sstr << std::setw(digits) << std::setfill('0') << std::to_string(totp);

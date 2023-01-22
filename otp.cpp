@@ -146,6 +146,8 @@ uint32_t generate_HOTP(const char * b32_secret,
 		hmac_bytes = crypto_auth_hmacsha512_BYTES;
 		key_bytes = crypto_auth_hmacsha512_KEYBYTES;
 		break;
+	default:
+		throw std::invalid_argument("selected HMAC algorithm is not supported");
 	};
 
 	if (digits > 9)

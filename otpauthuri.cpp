@@ -6,7 +6,7 @@
 
 OTPAuthURI::OTPAuthURI(std::string account,
     std::string b32_secret,
-    Algorithm algorithm,
+    HMAC algorithm,
     std::string issuer,
     unsigned int digits,
     std::chrono::seconds period)
@@ -85,11 +85,11 @@ OTPAuthURI OTPAuthURI::ParseURI(const std::string_view uri)
 		if (key == "algorithm")
 		{
 			if (value == "SHA1" || value == "sha1")
-				otpauth.algorithm_ = Algorithm::SHA1;
+				otpauth.algorithm_ = HMAC::SHA1;
 			else if (value == "SHA256" || value == "sha256")
-				otpauth.algorithm_ = Algorithm::SHA256;
+				otpauth.algorithm_ = HMAC::SHA256;
 			else if (value == "SHA512" || value == "sha512")
-				otpauth.algorithm_ = Algorithm::SHA512;
+				otpauth.algorithm_ = HMAC::SHA512;
 			else
 				throw std::invalid_argument("invalid HMAC algorithm specified; "
 				                            "expecting (SHA1|SHA256|SHA512)");
@@ -138,9 +138,9 @@ std::string OTPAuthURI::ToString() const
 	uri += "&algorithm=";
 	switch (algorithm_)
 	{
-	case Algorithm::SHA1: uri += "SHA1"; break;
-	case Algorithm::SHA256: uri += "SHA256"; break;
-	case Algorithm::SHA512: uri += "SHA512"; break;
+	case HMAC::SHA1: uri += "SHA1"; break;
+	case HMAC::SHA256: uri += "SHA256"; break;
+	case HMAC::SHA512: uri += "SHA512"; break;
 	}
 	uri += "&digits=" + std::to_string(digits_);
 	uri += "&period=" + std::to_string(period_);
