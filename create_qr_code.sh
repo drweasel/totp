@@ -62,10 +62,10 @@ if test -z "$_SECRET"; then
   read -s SECRET
   >&2 echo
   if test -z "$SECRET"; then
-    SECRET="$(head -c 20 /dev/random | base64 -w 0)"
+    SECRET=$(head -c 20 /dev/random | base64 -w 0)
   fi
 else
-  SECRET="$_SECRET"
+  SECRET=$_SECRET
 fi
 
 # type is always totp - hotp not supported by this script
@@ -87,7 +87,8 @@ ACCOUNT="$_ACCOUNT"
 # -----------------------------------------------------------------------------
 
 # encode secret
-SECRET=$(<<<$SECRET base32 -w 0)
+#SECRET=$(<<<$SECRET base32 -w 0)
+SECRET=$(echo -n $SECRET | base32 -w 0)
 # remove padding
 SECRET=${SECRET%%=*}
 # urlencode special characters
