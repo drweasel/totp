@@ -147,3 +147,33 @@ std::string OTPAuthURI::ToString() const
 	return uri;
 }
 
+bool otp_authenticate(const char * uri, uint32_t passwd, int64_t cts)
+{
+	OTPAuthURI otpauth_uri;
+	try
+	{
+		otpauth_uri = OTPAuthURI::ParseURI(uri);
+	}
+	catch (const std::invalid_argument &)
+	{
+		return false;
+	}
+
+	unsigned int digits = otpauth_uri.GetDigits();
+	unsigned int period = otpauth_uri.GetPeriod();
+
+	if (otpauth_uri.GetType() == OTPAuthURI::Type::HOTP)
+	{
+		uint32_t hotp = generate_HOTP(otpauth_uri.GetBase32Secret().c_str(),
+		    digits, cts, otpauth_uri.GetAlgorithm());
+		return hotp == passwd;
+	}
+	else if (otpauth_uri.GetType() == OTPAuthURI::Type::TOTP)
+	{
+		constexpr int t0 = 0;
+		uint32_t totp = generate_TOTP(otpauth_uri.GetBase32Secret().c_str(),
+		    digits, period, t0, otpauth_uri.GetAlgorithm(), cts);
+		return totp == passwd;
+	}
+	return false;
+}

@@ -34,6 +34,8 @@ target_sources(otp PRIVATE
   otpauthuri.cpp otpauthuri.h
   )
 target_link_libraries(otp PUBLIC -lsodium)
+set_target_properties(otp PROPERTIES PUBLIC_HEADER otp.h)
+install(TARGETS otp PUBLIC_HEADER)
 
 add_executable(totp)
 target_sources(totp PRIVATE main.cpp)

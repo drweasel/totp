@@ -27,11 +27,11 @@ int main(int argc, char ** argv)
 		return EXIT_FAILURE;
 	}
 
-    if (otpauth_uri.GetType() != OTPAuthURI::Type::TOTP)
-    {
-        std::cerr << "error: only TOTP is currently supported" << std::endl;
-        return EXIT_FAILURE;
-    }
+	if (otpauth_uri.GetType() != OTPAuthURI::Type::TOTP)
+	{
+		std::cerr << "error: only TOTP is currently supported" << std::endl;
+		return EXIT_FAILURE;
+	}
 
 	unsigned int digits = otpauth_uri.GetDigits();
 	unsigned int period = otpauth_uri.GetPeriod();
@@ -45,6 +45,11 @@ int main(int argc, char ** argv)
 		std::stringstream sstr;
 		sstr << std::setw(digits) << std::setfill('0') << std::to_string(totp);
 		std::cout << sstr.str() << std::endl;
+
+		if (otp_authenticate(argv[1], totp))
+			std::cout << "success" << std::endl;
+		else
+			std::cout << "failed" << std::endl;
 	}
 	catch (const std::exception & ex)
 	{

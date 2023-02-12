@@ -18,7 +18,7 @@ enum class HMAC
  * @param counter a counter value, used only once
  * @return a uint32_t containing the OTP
  */
-uint32_t generate_HOTP(const char * b32_secret,
+extern "C" uint32_t generate_HOTP(const char * b32_secret,
     unsigned int digits,
     uint64_t counter,
     HMAC hash_algo);
@@ -38,10 +38,23 @@ uint32_t generate_HOTP(const char * b32_secret,
  * @param seconds_since_epoch optional UNIX timestamp
  * @return a uint32_t containing the TOTP
  */
-uint32_t generate_TOTP(const char * b32_secret,
+extern "C" uint32_t generate_TOTP(const char * b32_secret,
     unsigned int digits,
     unsigned int period,
     int t0,
     HMAC hash_algo,
     int64_t seconds_since_epoch = -1);
+
+/**
+ * Authenticate using HOTP or TOTP.
+ *
+ * @param uri   an otpauth URI
+ * @param passwd a password to compare
+ * @param cts    a counter value or a timestamp (-1 uses the current timestamp
+ *    for TOTP)
+ * @return true, if the provided password is correct
+ */
+extern "C" bool otp_authenticate(const char * uri,
+    uint32_t passwd,
+    int64_t cts = -1);
 
