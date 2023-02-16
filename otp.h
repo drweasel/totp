@@ -3,7 +3,7 @@
 
 enum class HMAC
 {
-    SHA1,
+	SHA1,
 	SHA256,
 	SHA512
 };
@@ -57,4 +57,12 @@ extern "C" uint32_t generate_TOTP(const char * b32_secret,
 extern "C" bool otp_authenticate(const char * uri,
     uint32_t passwd,
     int64_t cts = -1);
+
+/**
+ * Generate a random, BASE32-encoded secret of given length.
+ *
+ * @param buffer        pre-allocated memory for storing the secret
+ * @param buffer_length length of the pre-allocated memory
+ */
+extern "C" void generate_b32_secret(char * buffer, unsigned int buffer_length);
 

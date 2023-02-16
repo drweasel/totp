@@ -8,6 +8,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+find_package(PkgConfig QUIET)
+if (PKG_CONFIG_FOUND)
+  pkg_check_modules(SODIUM QUIET libsodium)
+endif ()
+
 #set(CMAKE_CXX_CLANG_TIDY clang-tidy;
 #  -checks=*
 #  )
@@ -33,6 +38,12 @@ target_sources(otp PRIVATE
   otp.cpp otp.h
   otpauthuri.cpp otpauthuri.h
   )
+
+if (SODIUM_FOUND)
+  target_include_directories(otp PUBLIC ${SODIUM_INCLUDE_DIRS})
+  target_link_directories(otp PUBLIC ${SODIUM_LIBRARY_DIRS})
+endif ()
+
 target_link_libraries(otp PUBLIC -lsodium)
 set_target_properties(otp PROPERTIES PUBLIC_HEADER otp.h)
 install(TARGETS otp PUBLIC_HEADER)

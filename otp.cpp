@@ -11,6 +11,7 @@ extern "C"
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <random>
 #include <stdexcept>
 
 namespace
@@ -195,6 +196,9 @@ uint32_t generate_HOTP(const char * b32_secret,
 		crypto_auth_hmacsha512(hmac.get(), (const unsigned char *)&counter,
 		    sizeof(counter), key.get());
 		break;
+  default:
+    // not reachable
+    break;
 	}
 
 	// pick some digits and return them as OTP
@@ -216,3 +220,12 @@ uint32_t generate_TOTP(const char * b32_secret,
 	return generate_HOTP(b32_secret, digits, counter, hash_algo);
 }
 
+void generate_b32_secret(char * buffer, unsigned int buffer_length)
+{
+	if (buffer_length == 0) return;
+	std::random_device rd;
+	std::default_random_engine prng(rd());
+	std::uniform_int_distribution<int> randu(0, 31);
+	for (unsigned int k = 0; k < buffer_length - 1; ++k)
+		buffer[k] = "abcdefghijklmnopqrstuvwxyz234567"[randu(prng)];
+}
